@@ -136,7 +136,6 @@ void setup() {
 
   delay(1000);
   mqttReconnect();
-  mqttClient.publish("climate/test", "hi there");
 
   Serial.println("Scanning...");
   //esp_log_level_set("*", ESP_LOG_DEBUG);
