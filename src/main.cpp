@@ -14,6 +14,9 @@
 #include <ArduinoJson.h>
 
 int scanTime = 30; //In seconds
+unsigned long previousMillis = 0;
+unsigned long interval = 30000;
+
 BLEScan* pBLEScan;
 
 WiFiClient client;
@@ -110,10 +113,7 @@ void mqttReconnect() {
   }
 }
 
-void setup() {
-  Serial.begin(115200);
-  M5.begin();
-  M5.Lcd.setRotation(3);
+void wifiConnect() {
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   delay(100);
@@ -123,8 +123,16 @@ void setup() {
   }
   IPAddress ip = WiFi.localIP();
   Serial.printf("connected: %s\n", ip.toString().c_str());
+  M5.Lcd.printf("IP: %s", ip.toString().c_str());
+}
+
+void setup() {
+  Serial.begin(115200);
+  M5.begin();
+  M5.Lcd.setRotation(3);
   mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
 
+  wifiConnect();
 
   delay(1000);
   mqttReconnect();
@@ -142,6 +150,14 @@ void setup() {
 }
 
 void loop() {
+  unsigned long currentMillis = millis();
+  if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >=interval)) {
+    Serial.print(millis());
+    Serial.println("Reconnecting to WiFi...");
+    WiFi.disconnect();
+    WiFi.reconnect();
+    previousMillis = currentMillis;
+  }
   mqttReconnect();
   BLEScanResults foundDevices = pBLEScan->start(scanTime, false);
   Serial.print("Devices found: ");
